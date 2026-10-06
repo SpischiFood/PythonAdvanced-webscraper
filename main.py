@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import re
 from collections import Counter
 from spellchecker import SpellChecker
+from urllib.parse import urljoin
 
 @click.command()
 @click.argument("website")
@@ -29,7 +30,16 @@ def scraper(website):
 
     links = soup.find_all(href=True)
     hrefs = [link["href"] for link in links]
-    print(hrefs)
+
+    absolute_links = []
+
+    for href in hrefs:
+        absolute_url = urljoin(website, href)
+
+        if absolute_url.startswith(("https://", "http://")):
+            absolute_links.append(absolute_url)
+
+    print(absolute_links)
 
 if __name__== "__main__":
     scraper()
