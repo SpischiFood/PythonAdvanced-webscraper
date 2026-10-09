@@ -6,10 +6,16 @@ from collections import Counter
 from spellchecker import SpellChecker
 from urllib.parse import urljoin
 
-@click.command()
-@click.argument("website")
+MAX_DIEPTE = 1
 
-def scraper(website):
+
+def scrape_website(website, teller = 0, bezocht = [], diepte = 0):
+
+    if website in bezocht:
+        return
+
+    bezocht.add(website)
+
     spell = SpellChecker(language="nl")
     res = requests.get(website)
     soup = BeautifulSoup(res.text, 'html.parser')
@@ -22,11 +28,12 @@ def scraper(website):
         if woord.lower() in bekende_woorden:
             correcte_woorden.append(woord.lower())
 
-    teller = Counter(correcte_woorden)
-    print(teller)
+    teller.update(correcte_woorden)
+    ##Niet verder zoeken
+    if diepte >= MAX_DIEPTE:
+        return
 
     ## Links zoeken
-    print("\nLinks: ")
 
     links = soup.find_all(href=True)
     hrefs = [link["href"] for link in links]
@@ -39,7 +46,19 @@ def scraper(website):
         if absolute_url.startswith(("https://", "http://")):
             absolute_links.append(absolute_url)
 
-    print(absolute_links)
+    for link in absolute_links:
+        scrape_website(link, teller, bezocht, diepte + 1)
+
+@click.command()
+@click.argument("website")
+def scraper(website):
+    teller = Counter()
+    bezocht = set()
+
+    scrape_website(website, teller, bezocht)
+    print(teller)
+
+        
 
 if __name__== "__main__":
     scraper()
